@@ -1,0 +1,133 @@
+name: Build & Deploy Play Store
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      STORE_PASS: ${{ secrets.STORE_PASSWORD }}
+      KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      SERVICE_ACCOUNT_BASE64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_BASE64 }}
+
+    steps:
+      # 🔽 Checkout do código
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 🔢 Increment versionCode
+      - name: Increment versionCode
+        run: |
+          FILE="android/app/build.gradle"
+          CURRENT_VERSION_CODE=$(grep versionCode $FILE | awk '{print $2}')
+          NEW_VERSION_CODE=$((CURRENT_VERSION_CODE + 1))
+          sed -i "s/versionCode $CURRENT_VERSION_CODE/versionCode $NEW_VERSION_CODE/" $FILE
+          echo "✅ versionCode atualizado para $NEW_VERSION_CODE"
+
+      # 🔢 Increment versionName patch
+      - name: Increment versionName patch
+        run: |
+          FILE="android/app/build.gradle"
+          LINE=$(grep versionName $FILE)
+          VERSION=$(echo $LINE | grep -oP '(?<=versionName ["'\''])([^"'\'']+)')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          if [[ $LINE == *"'"* ]]; then
+            sed -i "s/versionName '.*'/versionName '$NEW_VERSION'/" $FILE
+          else
+            sed -i "s/versionName \".*\"/versionName \"$NEW_VERSION\"/" $FILE
+          fi
+          echo "✅ versionName atualizado para $NEW_VERSION"
+
+      # 🔐 Decode Keystore do base64
+      - name: Decode Keystore
+        run: |
+          mkdir -p android/app/google_play
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/google_play/keystore_upload.jks
+
+      # 🔍 Verificar se o arquivo foi gerado corretamente
+      - name: Debug Keystore File
+        run: |
+          if [ -f "android/app/google_play/keystore_upload.jks" ]; then
+            echo "✅ Keystore file exists."
+            FILESIZE=$(stat -c%s "android/app/google_play/keystore_upload.jks")
+            echo "📦 Keystore file size: $FILESIZE bytes"
+            if [ "$FILESIZE" -lt 1000 ]; then
+              echo "❌ Keystore file size too small. Check base64 string."
+              exit 1
+            fi
+          else
+            echo "❌ Keystore file does NOT exist."
+            exit 1
+          fi
+
+      # 🔍 Listar aliases no keystore
+      - name: List Keystore Aliases
+        run: |
+          keytool -list -v \
+            -keystore android/app/google_play/keystore_upload.jks \
+            -storepass "$STORE_PASS" \
+            -noprompt
+
+      # 🔍 Verificar alias existe
+      - name: Check Alias Exists
+        run: |
+          keytool -list \
+            -keystore android/app/google_play/keystore_upload.jks \
+            -storepass "$STORE_PASS" \
+            -alias upload \
+            -noprompt
+
+      # 🔑 Verificar senha da chave
+      - name: Check keystore password
+        run: |
+          keytool -exportcert \
+            -keystore android/app/google_play/keystore_upload.jks \
+            -storepass "$STORE_PASS" \
+            -alias upload \
+            -keypass "$KEY_PASS" \
+            -file cert_test.der
+
+      # 🔑 Criar key.properties corretamente
+      - name: Create key.properties
+        run: |
+          echo "storeFile=./google_play/keystore_upload.jks" > android/key.properties
+          echo "storePassword=$STORE_PASS" >> android/key.properties
+          echo "keyAlias=upload" >> android/key.properties
+          echo "keyPassword=$KEY_PASS" >> android/key.properties
+
+      # 🔧 Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+
+      - name: Check key.properties content
+        run: cat android/key.properties
+
+      # 🔨 Build Flutter App AAB
+      - name: Build Flutter App AAB
+        run: flutter build appbundle --release
+
+      # 🔑 Decode service account JSON
+      - name: Decode service account JSON
+        run: |
+          echo "$SERVICE_ACCOUNT_BASE64" | base64 --decode > service_account.json
+          cat service_account.json | jq .
+
+      # 🚀 Upload to Play Store
+      - name: Upload to Play Store (Internal Test)
+        uses: r0adkll/upload-google-play@v1.1.3
+        with:
+          serviceAccountJson: service_account.json
+          packageName: br.com.devfull.cursodeviolao
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
