@@ -5,18 +5,19 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
 }
 
 android {
-    namespace = "br.com.mateuspoloninicardoso.catviewportifolio" // << MUDE PARA O SEU NAMESPACE
+    namespace = "br.com.mateuspoloninicardoso.catviewportifolio"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "br.com.mateuspoloninicardoso.catviewportifolio" // << MUDE PARA O SEU APPLICATION ID
+        applicationId = "br.com.mateuspoloninicardoso.catviewportifolio"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -91,7 +92,7 @@ dependencies {
     // Testes Locais (src/test)
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
-    testImplementation(libs.kotlin.test.junit5) // Correção principal
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.koin.test)
@@ -104,5 +105,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
 
     implementation(libs.coil.compose)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
 
 }

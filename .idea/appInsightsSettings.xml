@@ -22,10 +22,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="br.com.mateuspoloninicardoso.catviewportifolio" />
+                  <option name="mobileSdkAppId" value="1:224113045681:android:af16776c195d6da7547290" />
+                  <option name="projectId" value="catview-e3b72" />
+                  <option name="projectNumber" value="224113045681" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

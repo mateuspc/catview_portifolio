@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "224113045681",
+    "project_id": "catview-e3b72",
+    "storage_bucket": "catview-e3b72.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:224113045681:android:af16776c195d6da7547290",
+        "android_client_info": {
+          "package_name": "br.com.mateuspoloninicardoso.catviewportifolio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxUN38u91cHXqMylnMGEru3aABtsQ6EaQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
